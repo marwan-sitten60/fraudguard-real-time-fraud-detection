@@ -2,9 +2,9 @@ FROM python:3.12.13-slim-bookworm AS builder
 WORKDIR /build
 COPY requirements.lock requirements-build.lock ./
 RUN python -m venv /opt/venv \
-    && /opt/venv/bin/pip install --no-cache-dir --require-hashes -r requirements.lock
+    && /opt/venv/bin/pip install --no-cache-dir --retries 3 --timeout 120 --require-hashes -r requirements.lock
 RUN python -m venv /opt/build \
-    && /opt/build/bin/pip install --no-cache-dir --require-hashes -r requirements-build.lock
+    && /opt/build/bin/pip install --no-cache-dir --retries 3 --timeout 120 --require-hashes -r requirements-build.lock
 COPY pyproject.toml README.md ./
 COPY src ./src
 RUN /opt/build/bin/python -m hatchling build -t wheel \

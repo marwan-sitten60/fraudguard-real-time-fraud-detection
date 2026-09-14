@@ -155,6 +155,20 @@ application service. None establishes final model performance.
   future boundaries; no invented training, data or UI implementation.
 - `.github/workflows/ci.yml`: quality checks, service integration tests, image build and smoke.
 
+## Phase 2 data foundation
+
+FraudGuard now supports a reproducible adapter for the public, **simulated** Fraud
+Detection Handbook data and a separate seeded synthetic operational simulator. Neither
+is real banking data. The historical canonical schema deliberately excludes device,
+location, channel, and currency fields absent from the handbook source; the operational
+simulator maps its synthetic fields to the unchanged API request schema. See the
+[data design](docs/data/data-design.md) for provenance, event-time, label, validation,
+split, and leakage rules.
+
+No fraud model has been trained. Generated source, Parquet, manifests, and simulator
+exports remain out of Git. CI tests compact fixtures and deterministic simulation only;
+it does not download the public source.
+
 ## Current limitations
 
 No model quality evaluation, real features, durable event publication, scoring persistence,
@@ -169,9 +183,10 @@ See [verification report](docs/verification.md) for checks actually executed in 
 
 ## Roadmap
 
-Phase 2: select a legitimate dataset and temporal evaluation protocol; build reproducible
-baseline training with leakage checks, MLflow tracking, a feature/model contract and
-quality gates. Benchmark the real predictor before extending serving. Later phases may
+Phase 3: feature engineering and the first real fraud model using Phase 2's temporal,
+provenance, and leakage contracts. Add reproducible evaluation, MLflow tracking, a
+feature/model contract, and quality gates. Benchmark the real predictor before extending
+serving. Later phases may
 add reliable event ingestion, online features, feedback, drift monitoring, streaming,
 advanced intelligence, public UI and authenticated deployment. No scheduler or cloud
 platform is selected now.
