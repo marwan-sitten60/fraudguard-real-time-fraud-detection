@@ -1,0 +1,53 @@
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "fraudguard"
+version = "0.1.0"
+description = "Latency-aware fraud scoring foundation; current model is MOCK"
+readme = "README.md"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+  "fastapi>=0.115,<1",
+  "uvicorn>=0.34,<1",
+  "pydantic>=2.10,<3",
+  "pydantic-settings>=2.7,<3",
+  "prometheus-client>=0.21,<1",
+  "redis>=5.2,<7",
+  "sqlalchemy>=2.0,<3",
+  "psycopg[binary]>=3.2,<4",
+  "alembic>=1.14,<2",
+]
+
+[dependency-groups]
+build = ["hatchling==1.27.0"]
+dev = ["pytest>=8.3,<10", "pytest-cov>=6,<8", "httpx>=0.28,<1", "ruff>=0.11,<1", "mypy>=1.15,<2"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/fraudguard"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src/fraudguard"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = '-ra --strict-markers -m "not integration" --cov=fraudguard --cov-report=term-missing'
+markers = ["integration: requires explicitly enabled local PostgreSQL/Redis"]
+
+[tool.coverage.run]
+branch = true
+source = ["fraudguard"]
+
+[tool.coverage.report]
+show_missing = true
+

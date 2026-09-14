@@ -1,0 +1,65 @@
+name: Phase 1 CI
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  foundation:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17.6-bookworm
+        env:
+          POSTGRES_DB: fraudguard
+          POSTGRES_USER: fraudguard
+          POSTGRES_PASSWORD: ci-only-ephemeral
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U fraudguard -d fraudguard"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+      redis:
+        image: redis:7.4.5-alpine
+        ports: [6379:6379]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      POSTGRES_PASSWORD: ci-only-ephemeral
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.10.12'
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run ruff format --check .
+      - run: uv run ruff check .
+      - run: uv run mypy
+      - run: uv run pytest --cov-report=xml
+      - run: uv run alembic upgrade head
+      - run: uv run pytest -m integration tests/integration --no-cov
+      - run: uv run alembic downgrade base && uv run alembic upgrade head
+      - name: Verify production lock export
+        run: |
+          uv export --locked --no-dev --no-emit-project --no-header -o /tmp/requirements.lock
+          diff requirements.lock /tmp/requirements.lock
+          uv export --locked --only-group build --no-header -o /tmp/requirements-build.lock
+          diff requirements-build.lock /tmp/requirements-build.lock
+      - run: docker build -t fraudguard:ci .
+      - name: Container smoke test
+        run: |
+          docker run -d --name fraudguard-smoke -p 8000:8000 fraudguard:ci
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8000/ready; then break; fi
+            sleep 1
+          done
+          uv run python scripts/smoke.py
+      - name: Container logs and cleanup
+        if: always()
+        run: |
+          docker logs fraudguard-smoke || true
+          docker rm -f fraudguard-smoke || true

@@ -1,0 +1,13 @@
+{
+  "transaction_id": "tx_123",
+  "user_id": "user_123",
+  "merchant_id": "merchant_123",
+  "device_id": "device_123",
+  "timestamp": "2026-09-14T09:00:00Z",
+  "amount": "49.95",
+  "currency": "USD",
+  "merchant_category": "5411",
+  "payment_channel": "ONLINE",
+  "country": "US",
+  "ip_country": "US"
+}

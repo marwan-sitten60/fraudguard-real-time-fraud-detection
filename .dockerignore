@@ -1,0 +1,16 @@
+.git
+.env
+.env.*
+.venv
+.uv-cache
+.docker-local
+**/__pycache__
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.coverage*
+data
+artifacts
+notebooks
+frontend
+*.log
