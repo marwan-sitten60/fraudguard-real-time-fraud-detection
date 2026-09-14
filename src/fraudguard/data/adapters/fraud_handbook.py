@@ -30,7 +30,7 @@ def handbook_row_to_canonical(
         event_time = (
             raw_time.replace(tzinfo=source_timezone) if raw_time.tzinfo is None else raw_time
         )
-        amount = Decimal(str(row["TX_AMOUNT"]))
+        amount = Decimal(str(row["TX_AMOUNT"])).quantize(Decimal("0.01"))
         label = FraudLabel(int(str(row["TX_FRAUD"])))
         return HistoricalTransaction(
             transaction_id=f"handbook_{row['TRANSACTION_ID']}",
