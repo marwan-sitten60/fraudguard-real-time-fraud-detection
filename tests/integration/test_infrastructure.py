@@ -8,6 +8,13 @@ from sqlalchemy import inspect, text
 from sqlalchemy.exc import IntegrityError
 
 from fraudguard.core.config import Settings
+from fraudguard.features.online.contract import CUSTOMER_FEATURES, MERCHANT_FEATURES
+from fraudguard.features.online.production_redis import (
+    OnlineSnapshot,
+    ProductionRedisFeatureProvider,
+    customer_key,
+    merchant_key,
+)
 from fraudguard.features.online.redis import RedisFeatureProvider, StoredFeatures
 from fraudguard.persistence.postgres.connection import database_engine
 
@@ -54,6 +61,36 @@ def test_redis_roundtrip(transaction):
             assert (await provider.get_features(unique)).values == {"x": 1}
         finally:
             await client.delete(key)
+            await provider.close()
+
+    asyncio.run(run())
+
+
+def test_production_redis_feature_provider_roundtrip(transaction):
+    async def run():
+        settings = Settings()
+        client = Redis(host=settings.redis_host, port=settings.redis_port, socket_timeout=2)
+        provider = ProductionRedisFeatureProvider(client, 300)
+        now = datetime.now(UTC)
+        customer = OnlineSnapshot(
+            entity_id=transaction.user_id,
+            updated_at=now,
+            values={name: 1.0 for name in CUSTOMER_FEATURES},
+        )
+        merchant = OnlineSnapshot(
+            entity_id=transaction.merchant_id,
+            updated_at=now,
+            values={name: 1.0 for name in MERCHANT_FEATURES},
+        )
+        keys = (customer_key(transaction.user_id), merchant_key(transaction.merchant_id))
+        try:
+            await client.set(keys[0], customer.model_dump_json(), ex=30)
+            await client.set(keys[1], merchant.model_dump_json(), ex=30)
+            result = await provider.get_features(transaction)
+            assert result.version == "fraud-online-features-v1"
+            assert result.values["customer_prior_transaction_count"] == 1.0
+        finally:
+            await client.delete(*keys)
             await provider.close()
 
     asyncio.run(run())

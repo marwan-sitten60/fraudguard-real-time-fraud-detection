@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     model_name: str = "fraudguard"
     model_alias: str = "champion"
     model_backend: Literal["mock"] = "mock"
-    feature_backend: Literal["mock", "redis"] = "mock"
+    feature_backend: Literal["mock", "redis", "redis_v1"] = "mock"
     feature_timeout_ms: int = Field(default=20, ge=1, le=1000)
     feature_max_age_seconds: int = Field(default=300, ge=1)
     decision_review_threshold: float = Field(default=0.5, ge=0, le=1)

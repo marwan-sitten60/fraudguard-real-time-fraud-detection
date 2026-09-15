@@ -20,6 +20,10 @@ dependencies = [
   "alembic>=1.14,<2",
   "pandas>=2.2,<3",
   "pyarrow>=18,<24",
+  "scikit-learn>=1.6,<2",
+  "xgboost>=2.1,<4",
+  "mlflow>=3.0,<4",
+  "joblib>=1.4,<2",
 ]
 
 [dependency-groups]
@@ -40,6 +44,10 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 python_version = "3.12"
 strict = true
 files = ["src/fraudguard"]
+
+[[tool.mypy.overrides]]
+module = ["sklearn.*", "xgboost", "mlflow", "joblib"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

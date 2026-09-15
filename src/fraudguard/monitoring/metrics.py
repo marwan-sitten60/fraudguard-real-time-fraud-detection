@@ -42,3 +42,23 @@ class Metrics:
         self.feature_errors = Counter(
             "fraudguard_feature_errors_total", "Feature failures", registry=self.registry
         )
+        self.feature_fetch_duration = Histogram(
+            "fraudguard_feature_fetch_duration_seconds",
+            "Redis feature fetch duration",
+            registry=self.registry,
+        )
+        self.feature_fetch_errors = Counter(
+            "fraudguard_feature_fetch_errors_total",
+            "Redis feature fetch failures",
+            registry=self.registry,
+        )
+        self.feature_snapshot_stale = Counter(
+            "fraudguard_feature_snapshot_stale_total",
+            "Stale Redis snapshots",
+            registry=self.registry,
+        )
+        self.feature_missing = Counter(
+            "fraudguard_feature_missing_total",
+            "Missing Redis snapshots",
+            registry=self.registry,
+        )

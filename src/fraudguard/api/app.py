@@ -16,6 +16,7 @@ from fraudguard.core.logging import configure_logging, request_id_context
 from fraudguard.decision.policy import ThresholdDecisionPolicy
 from fraudguard.domain.interfaces import FeatureProvider
 from fraudguard.features.online.mock import MockFeatureProvider
+from fraudguard.features.online.production_redis import ProductionRedisFeatureProvider
 from fraudguard.features.online.redis import RedisFeatureProvider
 from fraudguard.models.loader import load_model
 from fraudguard.monitoring.metrics import Metrics
@@ -32,17 +33,20 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         model = load_model(settings)
         features: FeatureProvider
-        if settings.feature_backend == "redis":
-            features = RedisFeatureProvider(
-                Redis(
-                    host=settings.redis_host,
-                    port=settings.redis_port,
-                    socket_timeout=settings.feature_timeout_ms / 1000,
-                    socket_connect_timeout=settings.feature_timeout_ms / 1000,
-                    decode_responses=True,
-                ),
-                settings.feature_max_age_seconds,
+        if settings.feature_backend in {"redis", "redis_v1"}:
+            client = Redis(
+                host=settings.redis_host,
+                port=settings.redis_port,
+                socket_timeout=settings.feature_timeout_ms / 1000,
+                socket_connect_timeout=settings.feature_timeout_ms / 1000,
+                decode_responses=True,
             )
+            if settings.feature_backend == "redis_v1":
+                features = ProductionRedisFeatureProvider(
+                    client, settings.feature_max_age_seconds, metrics
+                )
+            else:
+                features = RedisFeatureProvider(client, settings.feature_max_age_seconds)
         else:
             features = MockFeatureProvider()
         app.state.scoring_service = ScoringService(
